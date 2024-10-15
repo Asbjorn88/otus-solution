@@ -1,0 +1,13 @@
+mkdir -p /etc/ssl/angie/
+mv ./angie-repo* /etc/ssl/angie/
+vim /etc/yum.repos.d/angie.repo
+dnf install angie-pro angie-pro-module-dynamic-limit-req
+dnf install podman
+systemctl disable --now firewalld
+vim /etc/selinux/config
+setenforce 0
+mkdir ./angiedoc
+cp /etc/angie/* ./angiedoc/
+cp -r /etc/angie/* ./angiedoc/
+mkdir -p /var/www/html
+podman run -d --name angie -v /var/www/html:/usr/share/angie/html:ro -v /root/angiedoc/:/etc/angie:ro -p 8080:80 docker.angie.software/angie:latest
