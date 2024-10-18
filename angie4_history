@@ -1,0 +1,7 @@
+dnf -y install angie-pro-module-rtmp angie-pro-module-brotli
+find /etc/nginx/ -type f -exec sed -i 's/nginx/angie/g' {} \;
+find /etc/nginx/ -type f -exec sed -i 's/www-data/angie/g' {} \;
+for i in $(find /etc/ -type d -iname "nginx*" | sed 's/nginx/angie/g'); do for j in $( find /etc/ -type d -iname "nginx*"); do mv $j $i;done ;done
+for i in $(find /etc/ -type f -iname "nginx*" | sed 's/nginx/angie/g'); do for j in $( find /etc/ -type f -iname "nginx*"); do mv $j $i;done ;done
+ln -sf /etc/angie/sites-available/default /etc/angie/sites-enabled/default
+sed -i '5i\load_module modules/ngx_rtmp_module.so;\nload_module modules/ngx_http_brotli_filter_module.so;\nload_module modules/ngx_http_brotli_static_module.so;\n'  /etc/angie/angie.conf
