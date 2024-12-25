@@ -1,0 +1,18 @@
+[angie-limit-req]
+port = http,https
+enabled = true
+filter = angie-limit-req
+action = iptables-multiport[name=ReqLimit, port="http,https", protocol=tcp]
+logpath = /var/log/angie/*error.log
+findtime = 600
+bantime = 10
+maxretry = 4
+
+
+[angie-http-auth]
+enabled = true
+port = http,https
+logpath = /var/log/angie/*error.log
+findtime = 10
+bantime = 10
+maxretry = 3
