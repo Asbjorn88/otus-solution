@@ -24,7 +24,7 @@
     - name: "Push angie html"
       ansible.builtin.template:
         src: "templates/index.j2"
-        dest: "/usr/share/angie//html/index.html"
+        dest: "/usr/share/angie/html/index.html"
       notify: "Reload angie"
 
     - name: "Push web config"
