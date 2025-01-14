@@ -16,8 +16,8 @@
         enabled: true
 
     - name: "Push angie config"
-      ansible.builtin.copy:
-        src: "files/angie.j2"
+      ansible.builtin.template:
+        src: "templates/angie.j2"
         dest: "/etc/angie/angie.conf"
       notify: "Reload_angie"
 
@@ -28,8 +28,8 @@
       notify: "Reload_angie"
 
     - name: "Push web config"
-      ansible.builtin.copy:
-        src: "files/wordpress.j2"
+      ansible.builtin.template:
+        src: "templates/wordpress.j2"
         dest: "/etc/angie/http.d/default.conf"
       notify: "Reload_angie"
 
@@ -37,6 +37,13 @@
       ansible.builtin.copy:
         src: "files/console.j2"
         dest: "/etc/angie/http.d/console.conf"
+      notify: "Reload_angie"
+
+    - name: "Upload htpasswd"
+      ansible.builtin.template:
+        src: "templates/.htpasswd.j2"
+        dest: "/etc/angie/.htpasswd"
+        backup: true
       notify: "Reload_angie"
 
 - name: "Install backend"

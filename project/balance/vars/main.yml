@@ -1,1 +1,6 @@
 ---
+zone: "limit"
+zone_burst: "10"
+zone_rate: "100"
+zone_size: "2m"
+max_conns: "200"

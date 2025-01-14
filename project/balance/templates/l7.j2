@@ -14,6 +14,10 @@ server {
     access_log /var/log/angie/l7.access.log extended;
     error_log /var/log/angie/l7.error.log error;
     
+    limit_req zone={{ zone }} burst={{ zone_burst }};
+    limit_req_log_level error;
+    limit_req_status 444;
+
     location / {
       proxy_set_header Host $host;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

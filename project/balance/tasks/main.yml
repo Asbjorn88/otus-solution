@@ -54,6 +54,13 @@
         backup: true
       notify: "Reload angie"
 
+    - name: "Upload htpasswd"
+      ansible.builtin.template:
+        src: "templates/.htpasswd.j2"
+        dest: "/etc/angie/.htpasswd"
+        backup: true
+      notify: "Reload angie"
+
 - name: "Check keepalived config"
   ansible.builtin.shell: "keepalived -t"
   register: "status_keepalived"

@@ -1,3 +1,9 @@
 ---
 - name: "Reboot"
   ansible.builtin.reboot:
+
+- name: "Reload fail2ban"
+  ansible.builtin.systemd_service:
+    name: "fail2ban"
+    state: "reloaded"
+    enabled: true

@@ -45,12 +45,34 @@
       - "podman"
       - "sshpass"
       - "python3-cryptography"
+      - "httpd-tools"
     state: "latest"
 
 - name: "Disable SELinux"
   ansible.posix.selinux:
     state: "disabled"
   notify: "Reboot"
+
+- name: "Push filter fail2ban"
+  ansible.builtin.copy:
+    src: "files/{{ item }}"
+    dest: "/etc/fail2ban/filter.d/{{ item }}"
+  with_items:
+    - "angie-http-auth.conf"
+    - "angie-limit-req.conf"
+  notify: "Reload fail2ban"
+
+- name: "Push jail.local"
+  ansible.builtin.copy:
+    src: "files/jail.local"
+    dest: "/etc/fail2ban/jail.local"
+  notify: "Reload fail2ban"
+
+- name: "Start fail2ban"
+  ansible.builtin.systemd_service:
+    name: "fail2ban"
+    state: "started"
+    enabled: true
 
 - name: "Flush handlers for SELinux"
   ansible.builtin.meta: "flush_handlers"

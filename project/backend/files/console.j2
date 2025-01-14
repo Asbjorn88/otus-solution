@@ -6,6 +6,8 @@ server {
         alias /usr/share/angie-console-light/html/;
         index index.html;
         location /console/api/ {
+            auth_basic  "Защищенный сайт";
+            auth_basic_user_file .htpasswd;
             api /status/;
         }
 
