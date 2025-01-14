@@ -1,0 +1,32 @@
+server {
+    listen 8080;
+    server_name _;
+    location / {
+        auto_redirect on;
+        alias /usr/share/angie-console-light/html/;
+        index index.html;
+        location /api/ {
+            api /status/;
+        }
+
+        # uncomment below lines to enable writable API
+#        location /api/config/ {
+#             auth_basic  "Защищенный сайт";
+#             auth_basic_user_file .htpasswd;
+
+#             api /config/;
+#         }
+    }
+
+#    location /status/ {
+#	allow 10.69.0.0/16;
+#	allow 10.63.0.0/16;
+#	allow 127.0.0.1;
+#	deny all;
+# 	api /status/;
+#    }
+
+    location =/p8s {
+	prometheus all;
+    }
+}

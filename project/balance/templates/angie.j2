@@ -1,0 +1,59 @@
+user  angie;
+worker_processes  auto;
+worker_rlimit_nofile 65536;
+
+error_log  /var/log/angie/error.log notice;
+pid        /run/angie.pid;
+
+load_module modules/ngx_http_brotli_static_module.so;
+load_module modules/ngx_http_brotli_filter_module.so;
+
+events {
+    worker_connections  256;
+}
+
+http {
+    include prometheus_all.conf;
+    include       /etc/angie/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    log_format extended '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" request_time="$request_time" '
+                        '"$http_user_agent" "$http_x_forwarded_for" '
+                        'host="$host" server_name="$server_name" request_uri="$request_uri" uri="$uri" '
+                        'upstream_cache_status="$upstream_cache_status" upstream="$upstream_addr" upstream_status="$upstream_status" '
+                        'upstream_connect_time="$upstream_connect_time" upstream_response_time=="$upstream_response_time"';
+
+    access_log  /var/log/angie/access.log  main;
+
+    sendfile        on;
+    tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+# включаем сжатие для текстов
+    gzip  on;
+    gzip_static on;
+    gzip_comp_level 5;
+    gzip_types text/plain text/xml text/css application/javascript application/json image/x-icon image/svg+xml;
+
+    brotli_static on;
+    brotli on;
+    brotli_comp_level 5;
+    brotli_types text/plain text/xml text/css application/javascript application/json image/x-icon image/svg+xml;
+
+    include /etc/angie/http.d/*.conf;
+}
+
+stream {
+    log_format proxy '$remote_addr [$time_local] '
+                     '$protocol status=$status bytes-sent=$bytes_sent bytes-received=$bytes_received '
+                     'session-time=$session_time upstream="$upstream_addr" '
+                     'upstream-bytes-sent="$upstream_bytes_sent" "upstream-bytes-received=$upstream_bytes_received" upstream-connect-time="$upstream_connect_time"';
+
+    include /etc/angie/stream.d/*.conf;
+}

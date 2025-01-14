@@ -1,0 +1,19 @@
+vrrp_track_process track_angie {
+    process angie
+    delay 1
+}
+
+vrrp_instance web {
+    state {{ state }}
+    interface "eth1" 
+    virtual_router_id 254
+    priority {{ priority }}
+    advert_int 1
+
+    virtual_ipaddress {
+      192.168.50.10 dev eth1    
+    }
+    track_process {
+         track_angie
+   }
+}

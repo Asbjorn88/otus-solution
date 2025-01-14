@@ -1,0 +1,56 @@
+---
+- name: "Upgrade system"
+  ansible.builtin.dnf:
+    name: "*"            
+    state: "latest"
+
+- name: "Add epel repo"
+  ansible.builtin.dnf:
+    name: "epel-release"
+
+- name: "Add repository Angie"
+  ansible.builtin.yum_repository:
+    name: "angie-pro"
+    description: "Angie PRO repo"
+    baseurl: "https://download.angie.software/angie-pro/oracle/$releasever/"
+    sslclientcert: "/etc/ssl/angie/angie-repo.crt"
+    sslclientkey: "/etc/ssl/angie/angie-repo.key"
+    gpgcheck: true
+    enabled: true
+    gpgkey: "https://angie.software/keys/angie-signing.gpg.asc"
+
+- name: "Upload tls-key angie"
+  ansible.builtin.copy:
+    src: "files/angie"
+    dest: "/etc/ssl/"
+
+- name: "Add repository Nginx"
+  ansible.builtin.yum_repository:
+    name: "nginx-stable"
+    description: "nginx stable repo"
+    baseurl: "http://nginx.org/packages/centos/$releasever/$basearch/"
+    gpgcheck: true
+    enabled: true
+    gpgkey: "https://nginx.org/keys/nginx_signing.key"
+    module_hotfixes: true
+
+- name: "Install packages"
+  ansible.builtin.dnf:
+    name: 
+      - "vim"
+      - "python3"
+      - "nmap"
+      - "tcpdump"
+      - "fail2ban"
+      - "podman"
+      - "sshpass"
+      - "python3-cryptography"
+    state: "latest"
+
+- name: "Disable SELinux"
+  ansible.posix.selinux:
+    state: "disabled"
+  notify: "Reboot"
+
+- name: "Flush handlers for SELinux"
+  ansible.builtin.meta: "flush_handlers"

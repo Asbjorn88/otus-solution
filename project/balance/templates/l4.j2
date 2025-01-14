@@ -1,0 +1,15 @@
+upstream wordpress-l4 {
+  zone wordpress-l4 1M;
+# least_conn;
+  {% for host in groups['backend'] %} 
+  server {{ host }}:80;
+  {% endfor %}
+}
+
+server {
+    listen 80 reuseport;
+    proxy_pass wordpress-l4;
+    status_zone wordpress-l4;
+    access_log /var/log/angie/l4.access.log proxy;
+    error_log /var/log/angie/l4.error.log error;
+}

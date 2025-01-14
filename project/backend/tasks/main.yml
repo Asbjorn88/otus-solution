@@ -1,0 +1,161 @@
+---
+- name: "Install frontend"
+  block:
+    - name: "Install web server"
+      ansible.builtin.dnf:
+        name: 
+          - "angie-pro"
+          - "angie-pro-console-light"
+          - "angie-pro-module-brotli"
+        state: "latest"
+
+    - name: "Start angie"
+      ansible.builtin.systemd_service:
+        name: "angie"
+        state: "started"
+        enabled: true
+
+    - name: "Push angie config"
+      ansible.builtin.copy:
+        src: "files/angie.j2"
+        dest: "/etc/angie/angie.conf"
+      notify: "Reload angie"
+
+    - name: "Push angie html"
+      ansible.builtin.template:
+        src: "templates/index.j2"
+        dest: "/usr/share/angie//html/index.html"
+      notify: "Reload angie"
+
+    - name: "Push web config"
+      ansible.builtin.copy:
+        src: "files/wordpress.j2"
+        dest: "/etc/angie/http.d/default.conf"
+      notify: "Reload angie"
+
+    - name: "Push console ligth conf"
+      ansible.builtin.copy:
+        src: "files/console.j2"
+        dest: "/etc/angie/http.d/console.conf"
+      notify: "Reload angie"
+
+- name: "Install backend"
+  block:
+    - name: "Install backend packages"
+      ansible.builtin.dnf:
+        name: 
+          - "mysql-server"
+          - "mysql"
+          - "php-fpm"
+          - "php-mysqlnd"
+          - "python3-PyMySQL"
+          - "php-json"
+        state: "latest"
+
+    - name: "Start and enable mysql"
+      ansible.builtin.systemd_service:
+        name: "mysqld" 
+        state: "started"
+        enabled: true
+
+    - name: "Set up root user"
+      community.mysql.mysql_user:
+        name: "root"
+        password: "{{ mysql_root_password }}"
+        login_user: "root"
+        login_password: "{{ mysql_root_password }}"
+        check_implicit_admin: true
+        login_unix_socket: "/var/lib/mysql/mysql.sock"
+
+    - name: "Remove anonymous user"
+      community.mysql.mysql_user:
+        name: ""
+        state: "absent"
+        login_user: "root"
+        login_password: "{{ mysql_root_password }}"
+
+    - name: "Remove test database"
+      community.mysql.mysql_db:
+        name: "test"
+        state: "absent"
+        login_user: "root"
+        login_password: "{{ mysql_root_password }}"
+
+    - name: "Create database"
+      community.mysql.mysql_db:
+       name: "{{ mysql_db }}"
+       state: "present"
+       login_user: "root"
+       login_password: "{{ mysql_root_password }}"
+
+    - name: "Create account"
+      community.mysql.mysql_user:
+        login_user: "root"
+        login_password: "{{ mysql_root_password }}"
+        state: "present"
+        name: "{{ mysql_user }}"
+        password: "{{ mysql_pass }}"
+        priv: "{{ mysql_db }}.*:ALL,GRANT"
+
+    - name: "Download wordpress"
+      ansible.builtin.get_url:
+        url: "https://ru.wordpress.org/latest-ru_RU.zip"
+        dest: "/opt/latest-ru_RU.zip"
+
+    - name: "Inpack wordpress"
+      ansible.builtin.unarchive:
+        remote_src: true
+        src: "/opt/latest-ru_RU.zip"
+        dest: "/opt/"
+        owner: "angie"
+        group: "angie"
+
+    - name: "Configure wp-config"
+      ansible.builtin.template:
+        src: "templates/wp-config.j2"
+        dest: "/opt/wordpress/wp-config.php"
+        owner: "angie"
+        group: "angie"
+        backup: true
+
+    - name: "Create private key (RSA, 4096 bits)"
+      community.crypto.openssl_privatekey:
+        path: "/opt/wordpress/ssl.key"
+
+    - name: "Create self-signed cert and key"
+      community.crypto.x509_certificate:
+        path: "/opt/wordpress/ssl.crt"
+        privatekey_path: "/opt/wordpress/ssl.key"
+        provider: "selfsigned"
+
+    - name: "Configure owner php-fpm"
+      ansible.builtin.replace:
+        path: "/etc/php-fpm.d/www.conf"
+        regexp: "www-data|apache"
+        replace: "angie"
+      notify: "Restart php-fpm"
+
+    - name: "Configure listen owner php-fpm"
+      ansible.builtin.blockinfile:
+        path: "/etc/php-fpm.d/www.conf"
+        insertafter: "listen.mode"
+        marker: "; {mark} ANSIBLE MANAGED BLOCK"
+        block: |
+          listen.owner = angie
+          listen.group = angie
+          listen.mode = 0660
+      notify: "Restart php-fpm"
+
+    - name: "Start and enable mysql"
+      ansible.builtin.systemd_service:
+        name: "php-fpm" 
+        state: "started"
+        enabled: true
+
+    - name: "Check angie config"
+      ansible.builtin.shell: "angie -t"
+      register: "status_angie"
+
+    - name: "Check php-fpm config"
+      ansible.builtin.shell: "php-fpm -t"
+      register: "status_phpfpm"

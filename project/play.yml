@@ -1,0 +1,10 @@
+---
+- hosts: "all"
+  become: true
+  strategy: "free"
+  roles:
+    - prepair
+    - role: backend
+      when: "'backend' in group_names"
+    - role: balance
+      when: "'balance' in group_names"

@@ -1,0 +1,72 @@
+---
+- name: "Install soft"
+  ansible.builtin.dnf:
+    name:
+      - "keepalived"
+      - "angie-pro"
+      - "angie-pro-console-light"
+      - "angie-pro-module-brotli"
+
+- name: "Push keepalived config"
+  ansible.builtin.template:
+    src: "templates/keepalived.j2"
+    dest: "/etc/keepalived/keepalived.conf"
+    backup: true
+  notify: "Restart keepalived"
+
+- name: "Create private key (RSA, 4096 bits)"
+  community.crypto.openssl_privatekey:
+    path: "/opt/ssl.key"
+
+- name: "Create self-signed cert and key"
+  community.crypto.x509_certificate:
+    path: "/opt/ssl.crt"
+    privatekey_path: "/opt/ssl.key"
+    provider: "selfsigned"
+
+- name: "Configure Angie Pro"
+  block:
+    - name: "Push angie.conf"
+      ansible.builtin.template:
+        src: "templates/angie.j2"
+        dest: "/etc/angie/angie.conf"
+        backup: true
+      notify: "Reload angie"
+
+    - name: "L7 config"
+      ansible.builtin.template:
+        src: "templates/l7.j2"
+        dest: "/etc/angie/http.d/l7.conf"
+        backup: true
+      notify: "Reload angie"
+
+    - name: "L4 config"
+      ansible.builtin.template:
+        src: "templates/l4.j2"
+        dest: "/etc/angie/stream.d/l4.conf"
+        backup: true
+      notify: "Reload angie"
+
+    - name: "Console light config"
+      ansible.builtin.template:
+        src: "templates/console.j2"
+        dest: "/etc/angie/http.d/default.conf"
+        backup: true
+      notify: "Reload angie"
+
+- name: "Check keepalived config"
+  ansible.builtin.shell: "keepalived -t"
+  register: "status_keepalived"
+
+- name: "Check angie config"
+  ansible.builtin.shell: "angie -t"
+  register: "status_angie"
+
+- name: "Start services Angie and keepalived if not"
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    state: "started"
+    enabled: true
+  with_items:
+    - "keepalived"
+    - "angie"
