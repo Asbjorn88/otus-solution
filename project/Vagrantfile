@@ -1,0 +1,59 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+ 
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+#Vagrant.configure("2") do |config|
+# config.vm.define "vm1" do |vm1|
+#   vm1.vm.box = "oraclelinux/8" 
+#   vm1.vm.box_url = "https://oracle.github.io/vagrant-projects/boxes/oraclelinux/8.json"
+#   vm1.vm.hostname = "vm1"
+#   vm1.vm.network "private_network", ip: "192.168.50.4"
+#   vm1.vm.synced_folder "F:/Temp","/home/vagrant/ansible"
+#   vm1.vm.provision "shell", inline: <<-SHELL
+#     sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/#g' /etc/ssh/sshd_config
+#     service ssh restart
+#   SHELL
+# end
+#end
+
+
+Vagrant.configure("2") do |config|
+  config.vm.box_url = "https://oracle.github.io/vagrant-projects/boxes/oraclelinux/8.json"
+  config.vm.box = "oraclelinux/8"
+  config.vm.synced_folder "F:/Temp","/home/vagrant/ansible"
+  config.vm.provision "file", source: "C:/Users/Asbjorn/.ssh/id_ed25519.pub", destination: "/home/vagrant/.ssh/id_ed25519.pub"
+  config.vm.provision "shell", inline: <<-SHELL
+    sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/#g' /etc/ssh/sshd_config
+    sed -i 's/PasswordAuthentication\ no/PasswordAuthentication\ yes/g' /etc/ssh/sshd_config
+    cat /home/vagrant/.ssh/id_ed25519.pub >> /home/vagrant/.ssh/authorized_keys
+    service sshd restart
+  SHELL
+
+  config.vm.define "vm1" do |vm1|
+    vm1.vm.hostname = "vm1"
+    vm1.vm.network :private_network, :ip => "192.168.50.11"
+  end
+  config.vm.define "vm2" do |vm2|
+    vm2.vm.hostname = "vm2"
+    vm2.vm.network :private_network, :ip => "192.168.50.12"
+  end
+  config.vm.define "vm3" do |vm3|
+    vm3.vm.hostname = "vm3"
+    vm3.vm.network :private_network, :ip => "192.168.50.13"
+  end
+  config.vm.define "vm4" do |vm4|
+    vm4.vm.hostname = "vm4"
+    vm4.vm.network :private_network, :ip => "192.168.50.14"
+  end
+  config.vm.define "vm5" do |vm5|
+    vm5.vm.hostname = "vm5"
+    vm5.vm.network :private_network, :ip => "192.168.50.15"
+  end
+  config.vm.define "vm6" do |vm6|
+    vm6.vm.hostname = "vm6"
+    vm6.vm.network :private_network, :ip => "192.168.50.16"
+  end  
+end

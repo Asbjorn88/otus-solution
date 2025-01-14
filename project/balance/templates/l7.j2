@@ -1,8 +1,8 @@
 upstream wordpress-l7 {
   zone wordpress-l7 1M;
-#  least_conn;
+  least_conn;
   {% for host in groups['backend'] %} 
-  server {{ host }}:443;
+  server {{ host }}:443 slow_start=5 max_conns={{ max_conns }};
   {% endfor %}
 }
 

@@ -1,8 +1,8 @@
 upstream wordpress-l4 {
   zone wordpress-l4 1M;
-# least_conn;
+  least_conn;
   {% for host in groups['backend'] %} 
-  server {{ host }}:80 max_conns={{ max_conns }};
+  server {{ host }}:80 slow_start=5 max_conns={{ max_conns }};
   {% endfor %}
 }
 
