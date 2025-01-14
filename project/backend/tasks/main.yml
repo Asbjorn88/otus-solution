@@ -19,25 +19,25 @@
       ansible.builtin.copy:
         src: "files/angie.j2"
         dest: "/etc/angie/angie.conf"
-      notify: "Reload angie"
+      notify: "Reload_angie"
 
     - name: "Push angie html"
       ansible.builtin.template:
         src: "templates/index.j2"
         dest: "/usr/share/angie/html/index.html"
-      notify: "Reload angie"
+      notify: "Reload_angie"
 
     - name: "Push web config"
       ansible.builtin.copy:
         src: "files/wordpress.j2"
         dest: "/etc/angie/http.d/default.conf"
-      notify: "Reload angie"
+      notify: "Reload_angie"
 
     - name: "Push console ligth conf"
       ansible.builtin.copy:
         src: "files/console.j2"
         dest: "/etc/angie/http.d/console.conf"
-      notify: "Reload angie"
+      notify: "Reload_angie"
 
 - name: "Install backend"
   block:
@@ -133,7 +133,7 @@
         path: "/etc/php-fpm.d/www.conf"
         regexp: "www-data|apache"
         replace: "angie"
-      notify: "Restart php-fpm"
+      notify: "Restart_php-fpm"
 
     - name: "Configure listen owner php-fpm"
       ansible.builtin.blockinfile:
@@ -144,7 +144,7 @@
           listen.owner = angie
           listen.group = angie
           listen.mode = 0660
-      notify: "Restart php-fpm"
+      notify: "Restart_php-fpm"
 
     - name: "Start and enable mysql"
       ansible.builtin.systemd_service:
@@ -154,8 +154,8 @@
 
     - name: "Check angie config"
       ansible.builtin.shell: "angie -t"
-      register: "status_angie"
+      register: "status_angie_b"
 
     - name: "Check php-fpm config"
       ansible.builtin.shell: "php-fpm -t"
-      register: "status_phpfpm"
+      register: "status_phpfpm_b"

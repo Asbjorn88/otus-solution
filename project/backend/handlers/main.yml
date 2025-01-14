@@ -1,12 +1,12 @@
 ---
-- name: "Restart php-fpm"
+- name: "Restart_php-fpm"
   ansible.builtin.systemd_service:
     name: "php-fpm"
     state: "restarted"
-  when: "status_phpfpm.rc == 0"
+  when: "status_phpfpm_b.rc == 0"
 
-- name: "Reload angie"
+- name: "Reload_angie"
   ansible.builtin.systemd_service:
     name: "angie"
     state: "reloaded"
-  when: "status_angie.rc == 0"
+  when: "status_angie_b.rc == 0"
