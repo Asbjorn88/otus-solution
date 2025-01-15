@@ -1,7 +1,9 @@
 ---
+#Перезапуск сервера
 - name: "Reboot"
   ansible.builtin.reboot:
 
+#Reload службы fail2ban
 - name: "Reload fail2ban"
   ansible.builtin.systemd_service:
     name: "fail2ban"

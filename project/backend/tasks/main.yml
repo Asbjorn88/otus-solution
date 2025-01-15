@@ -1,6 +1,8 @@
 ---
+#Блок для установки frontend части на backend серверах стенда
 - name: "Install frontend"
   block:
+    # Установка angie-pro с модулями сжатия и веб консолью
     - name: "Install web server"
       ansible.builtin.dnf:
         name: 
@@ -8,37 +10,42 @@
           - "angie-pro-console-light"
           - "angie-pro-module-brotli"
         state: "latest"
-
+    
+    #Первоначальный запуск angie или проверка, что сейчас служба запущена, иначе запустить
     - name: "Start angie"
       ansible.builtin.systemd_service:
         name: "angie"
         state: "started"
         enabled: true
 
+    #Загружаем шаблон файла, который модфицирует angie.conf
     - name: "Push angie config"
       ansible.builtin.template:
         src: "templates/angie.j2"
         dest: "/etc/angie/angie.conf"
       notify: "Reload_angie"
 
+    #Загружаем шаблон файла html страницы с ip адресом хоста 
     - name: "Push angie html"
       ansible.builtin.template:
         src: "templates/index.j2"
         dest: "/usr/share/angie/html/index.html"
-      notify: "Reload_angie"
 
+    #Загружаем шаблон файла, который создаст конфигурацию для wordpress
     - name: "Push web config"
       ansible.builtin.template:
         src: "templates/wordpress.j2"
         dest: "/etc/angie/http.d/default.conf"
       notify: "Reload_angie"
 
+    #Загружаем шаблон файла для веб консоли
     - name: "Push console ligth conf"
       ansible.builtin.copy:
         src: "files/console.j2"
         dest: "/etc/angie/http.d/console.conf"
       notify: "Reload_angie"
 
+    #Загружаем файл с УЗ для доступа к веб консоли
     - name: "Upload htpasswd"
       ansible.builtin.template:
         src: "templates/.htpasswd.j2"
@@ -46,8 +53,11 @@
         backup: true
       notify: "Reload_angie"
 
+
+#Блок установки backend компонентов для backend серверов стенда
 - name: "Install backend"
   block:
+    #Установка mysql, php и необходимых модулей
     - name: "Install backend packages"
       ansible.builtin.dnf:
         name: 
@@ -59,12 +69,14 @@
           - "php-json"
         state: "latest"
 
+    #Запуск службы mysqld или проверка, что сейчас служба запущена, иначе запустить
     - name: "Start and enable mysql"
       ansible.builtin.systemd_service:
         name: "mysqld" 
         state: "started"
         enabled: true
 
+    #Установка пароля для пользователя root в СУБД
     - name: "Set up root user"
       community.mysql.mysql_user:
         name: "root"
@@ -74,6 +86,7 @@
         check_implicit_admin: true
         login_unix_socket: "/var/lib/mysql/mysql.sock"
 
+    #Удаление анонимных пользователей
     - name: "Remove anonymous user"
       community.mysql.mysql_user:
         name: ""
@@ -81,6 +94,7 @@
         login_user: "root"
         login_password: "{{ mysql_root_password }}"
 
+    #Удаление тестовой БД
     - name: "Remove test database"
       community.mysql.mysql_db:
         name: "test"
@@ -88,6 +102,7 @@
         login_user: "root"
         login_password: "{{ mysql_root_password }}"
 
+    #Создание БД для wordpress
     - name: "Create database"
       community.mysql.mysql_db:
        name: "{{ mysql_db }}"
@@ -95,6 +110,7 @@
        login_user: "root"
        login_password: "{{ mysql_root_password }}"
 
+    #Создание УЗ для wordpress
     - name: "Create account"
       community.mysql.mysql_user:
         login_user: "root"
@@ -104,11 +120,13 @@
         password: "{{ mysql_pass }}"
         priv: "{{ mysql_db }}.*:ALL,GRANT"
 
+    #Скачивание wordpress с этих ваших интернетов
     - name: "Download wordpress"
       ansible.builtin.get_url:
         url: "https://ru.wordpress.org/latest-ru_RU.zip"
         dest: "/opt/latest-ru_RU.zip"
 
+    #Распаковка архива wordpress
     - name: "Inpack wordpress"
       ansible.builtin.unarchive:
         remote_src: true
@@ -117,6 +135,7 @@
         owner: "angie"
         group: "angie"
 
+    #Конфигурирования wordpress для подключения к БД
     - name: "Configure wp-config"
       ansible.builtin.template:
         src: "templates/wp-config.j2"
@@ -125,16 +144,19 @@
         group: "angie"
         backup: true
 
+    #Создание ssl ключа
     - name: "Create private key (RSA, 4096 bits)"
       community.crypto.openssl_privatekey:
         path: "/opt/wordpress/ssl.key"
 
+    #Создание самоподписанного сертификата ssl
     - name: "Create self-signed cert and key"
       community.crypto.x509_certificate:
         path: "/opt/wordpress/ssl.crt"
         privatekey_path: "/opt/wordpress/ssl.key"
         provider: "selfsigned"
 
+    #Конфигурирование конфигурации php-fpm для работы с nginx/angie
     - name: "Configure owner php-fpm"
       ansible.builtin.replace:
         path: "/etc/php-fpm.d/www.conf"
@@ -142,6 +164,7 @@
         replace: "angie"
       notify: "Restart_php-fpm"
 
+    #Конфигурирование конфигурации php-fpm для работы с nginx/angie №2
     - name: "Configure listen owner php-fpm"
       ansible.builtin.blockinfile:
         path: "/etc/php-fpm.d/www.conf"
@@ -153,16 +176,20 @@
           listen.mode = 0660
       notify: "Restart_php-fpm"
 
-    - name: "Start and enable mysql"
-      ansible.builtin.systemd_service:
-        name: "php-fpm" 
-        state: "started"
-        enabled: true
-
+    #Проверка корректности конфигурации angie
     - name: "Check angie config"
       ansible.builtin.shell: "angie -t"
       register: "status_angie_b"
 
+    #Проверка корректности конфигурации php-fpm
     - name: "Check php-fpm config"
       ansible.builtin.shell: "php-fpm -t"
       register: "status_phpfpm_b"
+
+    #Запуск службы php-fpm или проверка, что сейчас служба запущена, иначе запустить, если конфигурация корректна
+    - name: "Start and enable php-fpm"
+      ansible.builtin.systemd_service:
+        name: "php-fpm" 
+        state: "started"
+        enabled: true
+      when: "status_phpfpm_b.rc == 0"

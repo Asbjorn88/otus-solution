@@ -1,10 +1,12 @@
 ---
+#Перезагрузка службы keepalived, если конфигурация корректна
 - name: "Restart keepalived"
   ansible.builtin.systemd_service:
     name: "keepalived"
     state: "restarted"
   when: "status_keepalived.rc == 0"
 
+#Перезагрузка службы angie, если конфигурация корректна
 - name: "Reload angie"
   ansible.builtin.systemd_service:
     name: "angie"

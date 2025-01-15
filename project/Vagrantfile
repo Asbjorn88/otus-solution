@@ -5,26 +5,11 @@
 # configures the configuration version (we support older styles for
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
-#Vagrant.configure("2") do |config|
-# config.vm.define "vm1" do |vm1|
-#   vm1.vm.box = "oraclelinux/8" 
-#   vm1.vm.box_url = "https://oracle.github.io/vagrant-projects/boxes/oraclelinux/8.json"
-#   vm1.vm.hostname = "vm1"
-#   vm1.vm.network "private_network", ip: "192.168.50.4"
-#   vm1.vm.synced_folder "F:/Temp","/home/vagrant/ansible"
-#   vm1.vm.provision "shell", inline: <<-SHELL
-#     sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/#g' /etc/ssh/sshd_config
-#     service ssh restart
-#   SHELL
-# end
-#end
-
 
 Vagrant.configure("2") do |config|
   config.vm.box_url = "https://oracle.github.io/vagrant-projects/boxes/oraclelinux/8.json"
   config.vm.box = "oraclelinux/8"
-  config.vm.synced_folder "F:/Temp","/home/vagrant/ansible"
-  config.vm.provision "file", source: "C:/Users/Asbjorn/.ssh/id_ed25519.pub", destination: "/home/vagrant/.ssh/id_ed25519.pub"
+  config.vm.provision "file", source: "$HOME/.ssh/id_ed25519.pub", destination: "/home/vagrant/.ssh/id_ed25519.pub"
   config.vm.provision "shell", inline: <<-SHELL
     sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/#g' /etc/ssh/sshd_config
     sed -i 's/PasswordAuthentication\ no/PasswordAuthentication\ yes/g' /etc/ssh/sshd_config

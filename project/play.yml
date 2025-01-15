@@ -1,10 +1,10 @@
 ---
 - hosts: "all"
   become: true
-  strategy: "free"
+  strategy: "free" #Не ждать выполнении задачи на всех хостах
   roles:
-    - prepair
-    - role: backend
+    - prepair #подготовка хостов
+    - role: backend #настройка backend серверов стенда
       when: "'backend' in group_names"
-    - role: balance
+    - role: balance #настройка frontend серверов стенда
       when: "'balance' in group_names"

@@ -1,4 +1,5 @@
 ---
+#Установка пакетов angie для организации логики балансировки, модуль сжатия и веб косоль, а так же пакет для организации отказоустойчитвости
 - name: "Install soft"
   ansible.builtin.dnf:
     name:
@@ -7,6 +8,7 @@
       - "angie-pro-console-light"
       - "angie-pro-module-brotli"
 
+#Загрузка шаблона файла для keepalived
 - name: "Push keepalived config"
   ansible.builtin.template:
     src: "templates/keepalived.j2"
@@ -14,18 +16,22 @@
     backup: true
   notify: "Restart keepalived"
 
+#Создание ssl ключа
 - name: "Create private key (RSA, 4096 bits)"
   community.crypto.openssl_privatekey:
     path: "/opt/ssl.key"
 
+#Создание самоподписанного сертификата ssl
 - name: "Create self-signed cert and key"
   community.crypto.x509_certificate:
     path: "/opt/ssl.crt"
     privatekey_path: "/opt/ssl.key"
     provider: "selfsigned"
 
+#Блок для конфигурации логики балансировки на базе angie
 - name: "Configure Angie Pro"
   block:
+    #Загрузка шаблона файла конфигурации angie
     - name: "Push angie.conf"
       ansible.builtin.template:
         src: "templates/angie.j2"
@@ -33,6 +39,7 @@
         backup: true
       notify: "Reload angie"
 
+    #Загрузка шаблона файла конфигурации балансировки L7 трафика к backend серверам стенда
     - name: "L7 config"
       ansible.builtin.template:
         src: "templates/l7.j2"
@@ -40,6 +47,7 @@
         backup: true
       notify: "Reload angie"
 
+    #Загрузка шаблона файла конфигурации балансировки L4 трафика к backend серверам стенда
     - name: "L4 config"
       ansible.builtin.template:
         src: "templates/l4.j2"
@@ -47,6 +55,7 @@
         backup: true
       notify: "Reload angie"
 
+    #Загружаем шаблон файла для веб консоли
     - name: "Console light config"
       ansible.builtin.template:
         src: "templates/console.j2"
@@ -54,6 +63,7 @@
         backup: true
       notify: "Reload angie"
 
+    #Загружаем файл с УЗ для доступа к веб консоли
     - name: "Upload htpasswd"
       ansible.builtin.template:
         src: "templates/.htpasswd.j2"
@@ -61,19 +71,28 @@
         backup: true
       notify: "Reload angie"
 
+#Проверка корректности конфигурации keepalived
 - name: "Check keepalived config"
   ansible.builtin.shell: "keepalived -t"
   register: "status_keepalived"
 
+#Проверка корректности конфигурации angie
 - name: "Check angie config"
   ansible.builtin.shell: "angie -t"
   register: "status_angie"
 
-- name: "Start services Angie and keepalived if not"
+#Запуск службы Angie или проверка, что сейчас служба запущена, иначе запустить, если конфигурация корректна
+- name: "Start services Angie if not"
   ansible.builtin.systemd_service:
-    name: "{{ item }}"
+    name: "angie"
     state: "started"
     enabled: true
-  with_items:
-    - "keepalived"
-    - "angie"
+  when: "status_angie.rc == 0"
+
+#Запуск службы keepalived или проверка, что сейчас служба запущена, иначе запустить, если конфигурация корректна
+- name: "Start services Keepalived if not"
+  ansible.builtin.systemd_service:
+    name: "keepalived"
+    state: "started"
+    enabled: true 
+  when: "status_keepalived.rc == 0"   

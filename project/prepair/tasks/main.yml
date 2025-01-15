@@ -1,13 +1,16 @@
 ---
+#Обновление системы до актулального состояния
 - name: "Upgrade system"
   ansible.builtin.dnf:
     name: "*"            
     state: "latest"
 
+#Добавление epel репозитория
 - name: "Add epel repo"
   ansible.builtin.dnf:
     name: "epel-release"
 
+#Добавление angie-pro репозитория
 - name: "Add repository Angie"
   ansible.builtin.yum_repository:
     name: "angie-pro"
@@ -19,11 +22,13 @@
     enabled: true
     gpgkey: "https://angie.software/keys/angie-signing.gpg.asc"
 
+#Загрузка ssl ключей для доступа к angie-pro репозиторию
 - name: "Upload tls-key angie"
   ansible.builtin.copy:
     src: "files/angie"
     dest: "/etc/ssl/"
 
+#Добавления репозитория Nginx
 - name: "Add repository Nginx"
   ansible.builtin.yum_repository:
     name: "nginx-stable"
@@ -34,6 +39,7 @@
     gpgkey: "https://nginx.org/keys/nginx_signing.key"
     module_hotfixes: true
 
+#Установка доп. утилит, из обязательных fail2ban, python3-cryptography, httpd-tools
 - name: "Install packages"
   ansible.builtin.dnf:
     name: 
@@ -48,11 +54,13 @@
       - "httpd-tools"
     state: "latest"
 
+#Отключение selinux, требуется перезапуск системы
 - name: "Disable SELinux"
   ansible.posix.selinux:
     state: "disabled"
   notify: "Reboot"
 
+#Загрузка фильтров для fail2ban
 - name: "Push filter fail2ban"
   ansible.builtin.copy:
     src: "files/{{ item }}"
@@ -62,17 +70,20 @@
     - "angie-limit-req.conf"
   notify: "Reload fail2ban"
 
+#Загрузка конфигурации fail2ban
 - name: "Push jail.local"
   ansible.builtin.copy:
     src: "files/jail.local"
     dest: "/etc/fail2ban/jail.local"
   notify: "Reload fail2ban"
 
+#Запуск службы fail2ban или проверка, что сейчас служба запущена, иначе запустить
 - name: "Start fail2ban"
   ansible.builtin.systemd_service:
     name: "fail2ban"
     state: "started"
     enabled: true
 
+#Немедленно выполнить handlers, если это требуется
 - name: "Flush handlers for SELinux"
   ansible.builtin.meta: "flush_handlers"

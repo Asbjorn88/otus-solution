@@ -1,8 +1,8 @@
 upstream wordpress-l4 {
-  zone wordpress-l4 1M;
-  least_conn;
+  zone wordpress-l4 1M; #Объявляем зону разделяемой памяти
+  least_conn; #Алгоритм балансировки на основе количества подключений к серверу
   {% for host in groups['backend'] %} 
-  server {{ host }}:80 slow_start=5 max_conns={{ max_conns }};
+  server {{ host }}:80 slow_start=5 max_conns={{ max_conns }}; #ввод в эксплуатацию в течение 5 секунд, ограничения количества активных подключений к серверу
   {% endfor %}
 }
 

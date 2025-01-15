@@ -1,8 +1,10 @@
+#Объявляем функцию контроля работы процесса angie
 vrrp_track_process track_angie {
     process angie
     delay 1
 }
 
+#Конфигурация данного инстанса vrrp
 vrrp_instance web {
     state {{ state }}
     interface "eth1" 
@@ -11,9 +13,9 @@ vrrp_instance web {
     advert_int 1
 
     virtual_ipaddress {
-      192.168.50.10 dev eth1    
+      {{ vip }} dev eth1    #VirtIP адрес на который клиенты посылают запросы
     }
-    track_process {
+    track_process {     #контроль состояния процесса angie
          track_angie
    }
 }
