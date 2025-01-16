@@ -47,7 +47,7 @@ http {
     brotli_types text/plain text/xml text/css application/javascript application/json image/x-icon image/svg+xml;
 
 #Объявление зоны ограничения запросов
-    limit_req_zone $binary_remote_addr zone={{ zone }}:{{ zone_size }} rate={{ zone_rate }}r/s;
+    #limit_req_zone $binary_remote_addr zone={{ zone }}:{{ zone_size }} rate={{ zone_rate }}r/s;
 
     include /etc/angie/http.d/*.conf;
 }

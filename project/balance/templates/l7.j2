@@ -8,13 +8,14 @@ upstream wordpress-l7 {
 
 server {
     listen 443 ssl reuseport;
+    http2 on;
     ssl_certificate /opt/ssl.crt;
     ssl_certificate_key /opt/ssl.key;
     status_zone wordpress-l7;
     access_log /var/log/angie/l7.access.log extended;
     error_log /var/log/angie/l7.error.log error;
     
-    limit_req zone={{ zone }} burst={{ zone_burst }};
+    #limit_req zone={{ zone }} burst={{ zone_burst }};
     limit_req_log_level error;
     limit_req_status 444;
 
